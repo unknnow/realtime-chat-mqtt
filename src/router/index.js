@@ -6,7 +6,7 @@ import PrivateChat from '../components/PrivateChat.vue';
 
 const routes = [
     { path: '/', component: UserLogin },
-    { path: '/chat', component: GeneralChat },
+    { path: '/chat/:username', name: 'GeneralChat', component: GeneralChat, props: true },
     { path: '/channel/:channelName', component: ChatChannel },
     { path: '/private-chat/:username', component: PrivateChat },
 ];
