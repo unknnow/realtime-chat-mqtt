@@ -1,19 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import UserLogin from '../components/UserLogin.vue';
 import GeneralChat from '../components/GeneralChat.vue';
-import ChatChannel from '../components/ChatChannel.vue';
 import PrivateChat from '../components/PrivateChat.vue';
+import ChatChannel from '../components/ChatChannel.vue';
 
 const routes = [
-    { path: '/', component: UserLogin },
-    { path: '/chat/:username', name: 'GeneralChat', component: GeneralChat, props: true },
-    { path: '/channel/:channelName', component: ChatChannel },
-    { path: '/private-chat/:username', component: PrivateChat },
+    { path: '/', name: 'UserLogin', component: UserLogin },
+    { path: '/general-chat/:username', name: 'GeneralChat', component: GeneralChat, props: true },
+    { path: '/private-chat/:username', name: 'PrivateChat', component: PrivateChat, props: true },
+    { path: '/chat-channel/:username/:channel', name: 'ChatChannel', component: ChatChannel, props: true }
 ];
 
 const router = createRouter({
     history: createWebHistory(),
-    routes,
+    routes
 });
 
 export default router;
