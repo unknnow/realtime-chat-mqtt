@@ -19,10 +19,6 @@ import ChannelSystem from "@/components/ChannelSystem.vue";
 export default {
     name: 'ChannelTabs',
     components: {ChannelSystem},
-    data() {
-        return {
-            channels: [{id: 1, topic:"Général"}, {id: 2, topic:"Discord"}, {id: 3, topic:"Boisson"}, {id: 4, topic:"Autre"}],
-        };
-    },
+    props: ['channels'],
 }
 </script>

@@ -15,12 +15,9 @@
 </template>
 
 <script>
+
 export default {
     name: 'ConnectedUsers',
-    data() {
-        return {
-            connectedUsers: [{username:"Unknow", clientId: "53456413123"}, {username:"Hugo", clientId: "4127865782"}, {username:"Julien", clientId: "154747324"}],
-        };
-    },
+    props: ['connectedUsers'],
 }
 </script>

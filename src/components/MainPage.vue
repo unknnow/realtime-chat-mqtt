@@ -2,7 +2,7 @@
     <div class="container pt-4">
         <h2 class="text-center mb-4">Efficom - RealTime Chat - Mqtt</h2>
 
-        <div class="row">
+        <div class="row" v-if="mqttConnected">
             <div class="col">
                 <div class="card shadow rounded max-vh-80 h-100" id="cardChats">
                     <div class="card-header">
@@ -11,7 +11,7 @@
 
                     <div class="card-body">
                         <div class="d-flex align-items-start">
-                            <ChannelTabs />
+                            <ChannelTabs :channels="channels" />
                         </div>
                     </div>
                 </div>
@@ -20,8 +20,12 @@
             <div class="col-3">
                 <UserInfo :username="username" />
 
-                <ConnectedUsers class="mt-4" />
+                <ConnectedUsers :connected-users="connectedUsers" class="mt-4" />
             </div>
+        </div>
+
+        <div class="row" v-else>
+            <p class="text-center">Connexion avec HiveMQ en cours ...</p>
         </div>
     </div>
 </template>
@@ -42,7 +46,15 @@ export default {
     props: ['username'],
     data() {
         return {
+            mqttConnected: false,
             connectedUsers: [],
+            channels: [
+                {
+                    id: 1,
+                    topic: 'Général',
+                    messages: []
+                }
+            ]
         };
     },
     methods: {
@@ -52,6 +64,8 @@ export default {
             }
 
             if (!this.connectedUsers.find((user) => user.clientId === data.clientId)) {
+                this.mqttConnected = true; // Permet au 1ère ajout d'un utilisateur d'indiquer que le service Mqtt est connecté ! | A modifier
+
                 this.connectedUsers.push(data);
             }
         },
@@ -83,6 +97,14 @@ export default {
                     clientId: mqttService.clientId,
                     isUserListResponse: true,
                 });
+            } else {
+                let parts = message.destinationName.split('/');
+
+                let channel = this.channels.find((element) => {
+                    return element.topic === parts[1]
+                })
+
+                channel.messages.push(data);
             }
         };
 

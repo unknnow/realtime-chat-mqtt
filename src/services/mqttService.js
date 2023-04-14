@@ -46,8 +46,22 @@ const mqttService = {
         }
     },
 
+    unsubscribe(topic) {
+        if (this.client) {
+            this.client.unsubscribe(topic);
+        }
+    },
+
+
     publish: function (topic, data) {
-        const message = new Paho.MQTT.Message(JSON.stringify(data));
+        const additionalData = {
+            id: new Date().getTime(), // Permet d'avoir une valeur pratiquement unique
+            username: this.username,
+        };
+
+        const mergedData = { ...additionalData, ...data };
+
+        const message = new Paho.MQTT.Message(JSON.stringify(mergedData));
         message.destinationName = topic;
         this.client.send(message);
     },
