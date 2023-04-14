@@ -6,6 +6,10 @@
             type="button" role="tab" :aria-controls="'channel-' + channel.id" aria-selected="false">
             {{ channel.topic }}
         </button>
+
+        <button type="button" class="btn btn-sm btn-secondary mt-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            &plus;
+        </button>
     </div>
 
     <div class="tab-content ms-4 w-100" id="v-pills-tabContent">

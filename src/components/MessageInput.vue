@@ -1,7 +1,7 @@
 <template>
     <div class="row g-3 align-items-center">
         <div class="col-10">
-            <input type="text" id="message" class="form-control" aria-describedby="message" placeholder="Message">
+            <input type="text" v-model="message" class="form-control" aria-describedby="message" placeholder="Message">
         </div>
 
         <div class="col-2 text-center">
@@ -17,12 +17,19 @@ import mqttService from "@/services/mqttService";
 export default {
     name: 'MessageInput',
     props: ['topic'],
+    data() {
+        return {
+            message: "",
+        };
+    },
     methods: {
         sendMessage() {
-            const message = document.getElementById("message").value;
-            if (message.trim() !== "") {
-                mqttService.publish("chats/" + this.topic, { message: message });
-                document.getElementById("message").value = "";
+            console.log(this.message);
+            console.log("chats/" + this.topic);
+
+            if (this.message.trim() !== "") {
+                mqttService.publish("chats/" + this.topic, { message: this.message });
+                this.message = "";
             }
         },
     },

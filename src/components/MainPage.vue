@@ -28,6 +28,30 @@
             <p class="text-center">Connexion avec HiveMQ en cours ...</p>
         </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Connexion à un nouveau Channel</h5>
+                </div>
+
+                <div class="modal-body">
+                    <label for="newChannelName" class="form-label">Nom du channel :</label>
+                    <input type="text" id="newChannelName" class="form-control" aria-describedby="newChannelNameHelpBlock">
+                    <div id="newChannelNameHelpBlock" class="form-text">
+                        Si le channel n'existe pas il sera automatiquement créé.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-dismiss="modal" @click="connectionNewChannel">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -56,23 +80,6 @@ export default {
                 }
             ]
         };
-    },
-    methods: {
-        userConnected(data) {
-            if (data.isUserListResponse && data.clientId === mqttService.clientId) {
-                return;
-            }
-
-            if (!this.connectedUsers.find((user) => user.clientId === data.clientId)) {
-                this.mqttConnected = true; // Permet au 1ère ajout d'un utilisateur d'indiquer que le service Mqtt est connecté ! | A modifier
-
-                this.connectedUsers.push(data);
-            }
-        },
-
-        userDisconnected(data) {
-            this.connectedUsers = this.connectedUsers.filter((user) => user.clientId !== data.clientId);
-        },
     },
     mounted() {
         const clientId = "clientId-" + new Date().getTime();
@@ -125,6 +132,36 @@ export default {
 
         mqttService.publish("users/disconnected", data);
         mqttService.disconnect();
+    },
+    methods: {
+        userConnected(data) {
+            if (data.isUserListResponse && data.clientId === mqttService.clientId) {
+                return;
+            }
+
+            if (!this.connectedUsers.find((user) => user.clientId === data.clientId)) {
+                this.mqttConnected = true; // Permet au 1ère ajout d'un utilisateur d'indiquer que le service Mqtt est connecté ! | A modifier
+
+                this.connectedUsers.push(data);
+            }
+        },
+
+        userDisconnected(data) {
+            this.connectedUsers = this.connectedUsers.filter((user) => user.clientId !== data.clientId);
+        },
+
+        connectionNewChannel() {
+            const newChannel = {
+                id: new Date().getTime(),
+                topic: document.getElementById("newChannelName").value,
+                messages: [],
+            }
+
+            if (newChannel.topic.trim() !== "") {
+                this.channels.push(newChannel);
+                document.getElementById("newChannelName").value = "";
+            }
+        },
     }
 }
 </script>
