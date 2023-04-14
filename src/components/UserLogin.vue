@@ -21,7 +21,7 @@ export default {
     },
     methods: {
         submitForm() {
-            this.$router.push({ name: "GeneralChat", params: { username: this.username } });
+            this.$router.push({ name: "MainPage", params: { username: this.username } });
         },
     },
 };

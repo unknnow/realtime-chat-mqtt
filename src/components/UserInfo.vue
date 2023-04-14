@@ -5,7 +5,7 @@
         </div>
 
         <div class="card-body text-center">
-            <p>Nom d'utilisateur : <span class="fw-bold">User</span></p>
+            <p>Nom d'utilisateur : <span class="fw-bold">{{ username }}</span></p>
             <button class="btn btn-sm btn-danger">Déconnexion</button>
         </div>
     </div>
@@ -13,6 +13,7 @@
 
 <script>
 export default {
-    name: 'UserInfo'
+    name: 'UserInfo',
+    props: ['username']
 }
 </script>
