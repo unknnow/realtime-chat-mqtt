@@ -7,7 +7,7 @@
             {{ channel.topic }}
         </button>
 
-        <button type="button" class="btn btn-sm btn-secondary mt-4" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <button type="button" class="btn btn-sm btn-secondary mt-4" data-bs-toggle="modal" data-bs-target="#newChannelModal">
             &plus;
         </button>
     </div>
@@ -24,5 +24,14 @@ export default {
     name: 'ChannelTabs',
     components: {ChannelSystem},
     props: ['channels'],
+    methods: {
+        setTopicInviteModal(channel) {
+            this.$parent.setTopicInviteModal(channel);
+        },
+
+        disconnectOfChannel(channel) {
+            this.$parent.disconnectOfChannel(channel);
+        },
+    }
 }
 </script>

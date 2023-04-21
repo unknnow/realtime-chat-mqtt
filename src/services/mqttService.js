@@ -24,6 +24,7 @@ const mqttService = {
         mqttService.subscribe("users/connected");
         mqttService.subscribe("users/disconnected");
         mqttService.subscribe("users/list");
+        mqttService.subscribe("invitations/" + mqttService.username);
 
         const data = {
             username: mqttService.username,
@@ -51,7 +52,6 @@ const mqttService = {
             this.client.unsubscribe(topic);
         }
     },
-
 
     publish: function (topic, data) {
         const additionalData = {

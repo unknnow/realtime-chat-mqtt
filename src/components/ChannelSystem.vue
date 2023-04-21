@@ -11,6 +11,17 @@
                 <MessageInput :topic="channel.topic" />
             </div>
         </div>
+
+        <div class="row mt-3">
+            <div class="col">
+                <h6>Channel : {{ channel.topic }}</h6>
+            </div>
+
+            <div class="col text-end">
+                <button v-if="channel.allowInvitations" type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#inviteChannelModal" @click="setTopicInviteModal">Inviter</button>
+                <button v-if="channel.allowDisconnection" type="button" class="btn btn-sm btn-danger ms-2" @click="disconnectOfChannel">Quitter le channel</button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -28,7 +39,17 @@ export default {
     },
     beforeUnmount() {
         mqttService.unsubscribe("chats/" + this.channel.topic);
+        console.log("Unsubscribe - " + this.channel.topic);
     },
+    methods: {
+        setTopicInviteModal() {
+            this.$parent.setTopicInviteModal(this.channel);
+        },
+
+        disconnectOfChannel() {
+            this.$parent.disconnectOfChannel(this.channel);
+        }
+    }
 };
 </script>
 

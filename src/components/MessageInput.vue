@@ -24,9 +24,6 @@ export default {
     },
     methods: {
         sendMessage() {
-            console.log(this.message);
-            console.log("chats/" + this.topic);
-
             if (this.message.trim() !== "") {
                 mqttService.publish("chats/" + this.topic, { message: this.message });
                 this.message = "";

@@ -21,6 +21,8 @@
                 <UserInfo :username="username" />
 
                 <ConnectedUsers :connected-users="connectedUsers" class="mt-4" />
+
+                <InvitationsSystem :invitations="invitations" class="mt-4" />
             </div>
         </div>
 
@@ -29,12 +31,12 @@
         </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <!-- Modal New Channel -->
+    <div class="modal fade" id="newChannelModal" tabindex="-1" aria-labelledby="newChannelModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Connexion à un nouveau Channel</h5>
+                    <h5 class="modal-title" id="newChannelModalLabel">Connexion à un nouveau Channel</h5>
                 </div>
 
                 <div class="modal-body">
@@ -52,12 +54,39 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Inviation Channel -->
+    <div class="modal fade" id="inviteChannelModal" tabindex="-1" aria-labelledby="inviteChannelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inviteChannelModalLabel">Inviter un utilisateur</h5>
+                </div>
+
+                <div class="modal-body">
+                    <label for="inviteChannelSelect" class="form-label">Utilisateur :</label>
+                    <select id="inviteChannelSelect" class="form-select" aria-describedby="inviteChannelNameHelpBlock" v-model="selectedInvitedUser">
+                        <option v-bind:key="user.id" v-for="user in this.connectedUsers" :value="user.username">{{ user.username }}</option>
+                    </select>
+                    <div id="inviteChannelNameHelpBlock" class="form-text">
+                        Utilisateur.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-dismiss="modal" @click="inviteUserToChannel">Inviter</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
 import ChannelTabs from './ChannelTabs.vue';
 import UserInfo from './UserInfo.vue';
 import ConnectedUsers from './ConnectedUsers.vue';
+import InvitationsSystem from "./InvitationsSystem.vue";
 import mqttService from "@/services/mqttService";
 
 export default {
@@ -65,7 +94,8 @@ export default {
     components: {
         ChannelTabs,
         UserInfo,
-        ConnectedUsers
+        ConnectedUsers,
+        InvitationsSystem
     },
     props: ['username'],
     data() {
@@ -74,11 +104,23 @@ export default {
             connectedUsers: [],
             channels: [
                 {
-                    id: 1,
+                    id: new Date().getTime(),
                     topic: 'Général',
-                    messages: []
+                    messages: [],
+                    allowInvitations: false,
+                    allowDisconnection: false
+                },
+                {
+                    id: new Date().getTime() + 1,
+                    topic: 'Test',
+                    messages: [],
+                    allowInvitations: true,
+                    allowDisconnection: true
                 }
-            ]
+            ],
+            selectedInvitedChannel: null,
+            selectedInvitedUser: null,
+            invitations: [],
         };
     },
     mounted() {
@@ -103,6 +145,12 @@ export default {
                     username: this.username,
                     clientId: mqttService.clientId,
                     isUserListResponse: true,
+                });
+            } else if (message.destinationName === "invitations/" + this.username) {
+                this.invitations.push({
+                    id: new Date().getTime(),
+                    sendBy: data.username,
+                    invitedTo: data.invitedTo,
                 });
             } else {
                 let parts = message.destinationName.split('/');
@@ -162,6 +210,19 @@ export default {
                 document.getElementById("newChannelName").value = "";
             }
         },
+
+        disconnectOfChannel(channel) {
+            let index = this.channels.findIndex((element) => {return element.id === channel.id});
+            this.channels.splice(index, 1);
+        },
+
+        setTopicInviteModal(channel) {
+            this.selectedInvitedChannel = channel;
+        },
+
+        inviteUserToChannel() {
+            mqttService.publish("invitations/" + this.selectedInvitedUser, { invitedTo: this.selectedInvitedChannel.topic });
+        }
     }
 }
 </script>
