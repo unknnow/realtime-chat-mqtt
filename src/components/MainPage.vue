@@ -20,7 +20,7 @@
             <div class="col-3">
                 <UserInfo :username="username" />
 
-                <ConnectedUsers :connected-users="connectedUsers" class="mt-4" />
+                <ConnectedUsers :connected-users="connectedUsers" :current-user-name="username" class="mt-4" />
 
                 <InvitationsSystem :invitations="invitations" class="mt-4" />
             </div>
@@ -105,17 +105,21 @@ export default {
             channels: [
                 {
                     id: new Date().getTime(),
-                    topic: 'Général',
+                    label: 'Général',
+                    topic: 'public/Général',
                     messages: [],
                     allowInvitations: false,
-                    allowDisconnection: false
+                    allowDisconnection: false,
+                    isPrivateChannel: false,
                 },
                 {
                     id: new Date().getTime() + 1,
-                    topic: 'Test',
+                    label: 'Test',
+                    topic: 'public/Test',
                     messages: [],
                     allowInvitations: true,
-                    allowDisconnection: true
+                    allowDisconnection: true,
+                    isPrivateChannel: false,
                 }
             ],
             selectedInvitedChannel: null,
@@ -125,7 +129,6 @@ export default {
     },
     mounted() {
         const clientId = "clientId-" + new Date().getTime();
-        console.log(clientId);
 
         const onConnectionLost = (responseObject) => {
             if (responseObject.errorCode !== 0) {
@@ -152,11 +155,11 @@ export default {
                     sendBy: data.username,
                     invitedTo: data.invitedTo,
                 });
+            } else if (message.destinationName === "mp/invite/" + this.username) {
+                this.connectToChannel(this.username + "/" + data.username, true);
             } else {
-                let parts = message.destinationName.split('/');
-
                 let channel = this.channels.find((element) => {
-                    return element.topic === parts[1]
+                    return element.topic === (message.destinationName)
                 })
 
                 channel.messages.push(data);
@@ -187,9 +190,8 @@ export default {
                 return;
             }
 
-            if (!this.connectedUsers.find((user) => user.clientId === data.clientId)) {
-                this.mqttConnected = true; // Permet au 1ère ajout d'un utilisateur d'indiquer que le service Mqtt est connecté ! | A modifier
-
+            if (!this.connectedUsers.find((user) => user.username === data.username) && data.username !== this.username) {
+                this.mqttConnected = true;
                 this.connectedUsers.push(data);
             }
         },
@@ -206,15 +208,18 @@ export default {
             }
         },
 
-        connectToChannel(channelName) {
+        connectToChannel(channelName, isPrivateChannel = false) {
             const newChannel = {
                 id: new Date().getTime(),
-                topic: channelName,
+                label: channelName,
+                topic: (isPrivateChannel ? "private/" : "public/") + channelName,
                 messages: [],
                 allowInvitations: true,
-                allowDisconnection: true
+                allowDisconnection: true,
+                isPrivateChannel: isPrivateChannel,
             }
 
+            console.log(newChannel);
             this.channels.push(newChannel);
         },
 
@@ -235,6 +240,10 @@ export default {
             let index = this.invitations.findIndex((element) => {return element.id === invitation.id})
             this.invitations.splice(index, 1);
         },
+
+        checkIfChannelExist(channelName) {
+            return this.channels.findIndex((element) => {return element.topic === channelName})!== -1;
+        }
     }
 }
 </script>

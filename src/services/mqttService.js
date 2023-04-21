@@ -25,6 +25,7 @@ const mqttService = {
         mqttService.subscribe("users/disconnected");
         mqttService.subscribe("users/list");
         mqttService.subscribe("invitations/" + mqttService.username);
+        mqttService.subscribe("mp/invite/" + mqttService.username);
 
         const data = {
             username: mqttService.username,

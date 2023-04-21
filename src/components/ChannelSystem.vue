@@ -14,11 +14,11 @@
 
         <div class="row mt-3">
             <div class="col">
-                <h6>Channel : {{ channel.topic }}</h6>
+                <h6>Channel {{ channel.isPrivateChannel ? "privé" : "publique" }} : {{ channel.label }}</h6>
             </div>
 
             <div class="col text-end">
-                <button v-if="channel.allowInvitations" type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#inviteChannelModal" @click="setTopicInviteModal">Inviter</button>
+                <button v-if="channel.allowInvitations && !channel.isPrivateChannel" type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#inviteChannelModal" @click="setTopicInviteModal">Inviter</button>
                 <button v-if="channel.allowDisconnection" type="button" class="btn btn-sm btn-danger ms-2" @click="disconnectOfChannel">Quitter le channel</button>
             </div>
         </div>
@@ -34,11 +34,16 @@ export default {
     name: "ChannelSystem",
     components: { MessageInput, ChatDisplay },
     props: ['index', 'channel'],
+    data() {
+        return {
+            topic: this.channel.topic,
+        };
+    },
     mounted() {
-        mqttService.subscribe("chats/" + this.channel.topic);
+        mqttService.subscribe(this.topic);
     },
     beforeUnmount() {
-        mqttService.unsubscribe("chats/" + this.channel.topic);
+        mqttService.unsubscribe(this.topic);
     },
     methods: {
         setTopicInviteModal() {

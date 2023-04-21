@@ -4,7 +4,7 @@
             :class="'nav-link ' + (index === 0 ? 'active' : '')" :id="'tabs-channel-' + channel.id"
             data-bs-toggle="pill" :data-bs-target="'#channel-' + channel.id"
             type="button" role="tab" :aria-controls="'channel-' + channel.id" aria-selected="false">
-            {{ channel.topic }}
+            {{ channel.label }}
         </button>
 
         <button type="button" class="btn btn-sm btn-secondary mt-4" data-bs-toggle="modal" data-bs-target="#newChannelModal">
