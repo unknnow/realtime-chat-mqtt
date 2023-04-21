@@ -175,29 +175,21 @@ export default {
             this.userDisconnected
         );
     },
-    beforeUnmount() {
-        const data = {
-            username: this.username,
-            clientId: this.username,
-        };
-
-        mqttService.publish("users/disconnected", data);
-        mqttService.disconnect();
-    },
     methods: {
         userConnected(data) {
+            this.mqttConnected = true;
+
             if (data.isUserListResponse && data.clientId === mqttService.clientId) {
                 return;
             }
 
             if (!this.connectedUsers.find((user) => user.username === data.username) && data.username !== this.username) {
-                this.mqttConnected = true;
                 this.connectedUsers.push(data);
             }
         },
 
         userDisconnected(data) {
-            this.connectedUsers = this.connectedUsers.filter((user) => user.clientId !== data.clientId);
+            this.connectedUsers = this.connectedUsers.filter((user) => user.username !== data.username);
         },
 
         connectionNewChannel() {
@@ -243,6 +235,20 @@ export default {
 
         checkIfChannelExist(channelName) {
             return this.channels.findIndex((element) => {return element.topic === channelName})!== -1;
+        },
+
+        disconnect() {
+            // MQTT
+            mqttService.publish("users/disconnected", {username: this.username,});
+
+            // Session Storage
+            let users = JSON.parse(sessionStorage.getItem('users'));
+
+            let index = users.findIndex((user) => user === this.username)
+            users.splice(index, 1);
+            sessionStorage.setItem('users', JSON.stringify(users));
+
+            this.$router.push({ name: "UserLogin" });
         }
     }
 }

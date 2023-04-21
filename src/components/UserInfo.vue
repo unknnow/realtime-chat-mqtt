@@ -6,14 +6,21 @@
 
         <div class="card-body text-center">
             <p>Nom d'utilisateur : <span class="fw-bold">{{ username }}</span></p>
-            <button class="btn btn-sm btn-danger">Déconnexion</button>
+            <button class="btn btn-sm btn-danger" @click="disconnect">Déconnexion</button>
         </div>
     </div>
 </template>
 
 <script>
+import mqttService from "@/services/mqttService";
+
 export default {
     name: 'UserInfo',
-    props: ['username']
+    props: ['username'],
+    methods: {
+        disconnect() {
+            this.$parent.disconnect();
+        }
+    }
 }
 </script>

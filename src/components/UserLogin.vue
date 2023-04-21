@@ -21,6 +21,20 @@ export default {
     },
     methods: {
         submitForm() {
+            let users = JSON.parse(sessionStorage.getItem('users'));
+            if (users === null) {
+                users = [];
+            }
+
+            let result = users.find((user) => user === this.username)
+
+            if (!result) {
+                users.push(this.username);
+                sessionStorage.setItem('users', JSON.stringify(users));
+            } else {
+                console.log("Ce nom d'utilisateur existe dèjà !");
+            }
+
             this.$router.push({ name: "MainPage", params: { username: this.username } });
         },
     },
@@ -28,7 +42,4 @@ export default {
 </script>
 
 <style scoped>
-.login {
-    /* Styles pour le formulaire de connexion */
-}
 </style>
