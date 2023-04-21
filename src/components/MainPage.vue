@@ -199,16 +199,23 @@ export default {
         },
 
         connectionNewChannel() {
+            let channelName = document.getElementById("newChannelName").value;
+
+            if (channelName.trim() !== "") {
+                this.connectToChannel(channelName)
+            }
+        },
+
+        connectToChannel(channelName) {
             const newChannel = {
                 id: new Date().getTime(),
-                topic: document.getElementById("newChannelName").value,
+                topic: channelName,
                 messages: [],
+                allowInvitations: true,
+                allowDisconnection: true
             }
 
-            if (newChannel.topic.trim() !== "") {
-                this.channels.push(newChannel);
-                document.getElementById("newChannelName").value = "";
-            }
+            this.channels.push(newChannel);
         },
 
         disconnectOfChannel(channel) {
@@ -222,7 +229,12 @@ export default {
 
         inviteUserToChannel() {
             mqttService.publish("invitations/" + this.selectedInvitedUser, { invitedTo: this.selectedInvitedChannel.topic });
-        }
+        },
+
+        removeInvitation(invitation) {
+            let index = this.invitations.findIndex((element) => {return element.id === invitation.id})
+            this.invitations.splice(index, 1);
+        },
     }
 }
 </script>

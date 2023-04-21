@@ -39,7 +39,6 @@ export default {
     },
     beforeUnmount() {
         mqttService.unsubscribe("chats/" + this.channel.topic);
-        console.log("Unsubscribe - " + this.channel.topic);
     },
     methods: {
         setTopicInviteModal() {
