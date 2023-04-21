@@ -1,4 +1,6 @@
 <template>
+    <ToastSystem ref="toasts"/>
+
     <div class="container pt-4">
         <h2 class="text-center mb-4">Efficom - RealTime Chat - Mqtt</h2>
 
@@ -6,12 +8,12 @@
             <div class="col">
                 <div class="card shadow rounded max-vh-80 h-100" id="cardChats">
                     <div class="card-header">
-                        Channels
+                        <font-awesome-icon :icon="['fas', 'list']" /> Channels
                     </div>
 
                     <div class="card-body">
                         <div class="d-flex align-items-start">
-                            <ChannelTabs :channels="channels" />
+                            <ChannelTabs :channels="channels" :user-name="this.username" ref="ChannelTabs" />
                         </div>
                     </div>
                 </div>
@@ -32,7 +34,7 @@
     </div>
 
     <!-- Modal New Channel -->
-    <div class="modal fade" id="newChannelModal" tabindex="-1" aria-labelledby="newChannelModalLabel" aria-hidden="true">
+    <div class="modal fade" data-bs-backdrop="static" id="newChannelModal" tabindex="-1" aria-labelledby="newChannelModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -41,9 +43,11 @@
 
                 <div class="modal-body">
                     <label for="newChannelName" class="form-label">Nom du channel :</label>
-                    <input type="text" id="newChannelName" class="form-control" aria-describedby="newChannelNameHelpBlock">
+                    <input type="text" id="newChannelName" class="form-control" aria-describedby="newChannelNameHelpBlock" v-no-special-chars>
                     <div id="newChannelNameHelpBlock" class="form-text">
                         Si le channel n'existe pas il sera automatiquement créé.
+                        <br>
+                        <span class="text-danger">Les caractères spéciaux ne sont pas autorisés !</span>
                     </div>
                 </div>
 
@@ -56,7 +60,7 @@
     </div>
 
     <!-- Modal Inviation Channel -->
-    <div class="modal fade" id="inviteChannelModal" tabindex="-1" aria-labelledby="inviteChannelModalLabel" aria-hidden="true">
+    <div class="modal fade" data-bs-backdrop="static" id="inviteChannelModal" tabindex="-1" aria-labelledby="inviteChannelModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -69,7 +73,7 @@
                         <option v-bind:key="user.id" v-for="user in this.connectedUsers" :value="user.username">{{ user.username }}</option>
                     </select>
                     <div id="inviteChannelNameHelpBlock" class="form-text">
-                        Utilisateur.
+                        Liste des utilisateur actuellement connecté.
                     </div>
                 </div>
 
@@ -88,10 +92,12 @@ import UserInfo from './UserInfo.vue';
 import ConnectedUsers from './ConnectedUsers.vue';
 import InvitationsSystem from "./InvitationsSystem.vue";
 import mqttService from "@/services/mqttService";
+import ToastSystem from "@/components/ToastSystem.vue";
 
 export default {
     name: 'MainPage',
     components: {
+        ToastSystem,
         ChannelTabs,
         UserInfo,
         ConnectedUsers,
@@ -111,15 +117,6 @@ export default {
                     allowInvitations: false,
                     allowDisconnection: false,
                     isPrivateChannel: false,
-                },
-                {
-                    id: new Date().getTime() + 1,
-                    label: 'Test',
-                    topic: 'public/Test',
-                    messages: [],
-                    allowInvitations: true,
-                    allowDisconnection: true,
-                    isPrivateChannel: false,
                 }
             ],
             selectedInvitedChannel: null,
@@ -133,6 +130,8 @@ export default {
         const onConnectionLost = (responseObject) => {
             if (responseObject.errorCode !== 0) {
                 console.log("onConnectionLost:" + responseObject.errorMessage);
+                this.mqttConnected = false;
+                this.sendToast('danger', "La connexion avec HiveMQ à était perdu !");
             }
         };
 
@@ -155,14 +154,30 @@ export default {
                     sendBy: data.username,
                     invitedTo: data.invitedTo,
                 });
+
+                this.sendToast('info', "Vous avez reçu une nouvelle invitation");
             } else if (message.destinationName === "mp/invite/" + this.username) {
+                if (this.checkIfChannelExist("private/" + data.username + "/" + this.username) || this.checkIfChannelExist("private/" + this.username + "/" + data.username))
+                    return
+
                 this.connectToChannel(this.username + "/" + data.username, true);
             } else {
                 let channel = this.channels.find((element) => {
                     return element.topic === (message.destinationName)
                 })
 
-                channel.messages.push(data);
+                let additionalData = {specialMessageType: false};
+                    // eslint-disable-next-line no-prototype-builtins
+                if (data.hasOwnProperty("isJoinMessage")) {
+                    additionalData.specialMessageType = true;
+                    // eslint-disable-next-line no-prototype-builtins
+                } else if (data.hasOwnProperty("isLeaveMessage")) {
+                    additionalData.specialMessageType = true;
+                }
+
+                let mergedData = { ...additionalData, ...data };
+
+                channel.messages.push(mergedData);
             }
         };
 
@@ -177,7 +192,10 @@ export default {
     },
     methods: {
         userConnected(data) {
-            this.mqttConnected = true;
+            if (!this.mqttConnected) {
+                this.mqttConnected = true;
+                this.sendToast('success', "Connexion à HiveMQ réussi !");
+            }
 
             if (data.isUserListResponse && data.clientId === mqttService.clientId) {
                 return;
@@ -185,18 +203,30 @@ export default {
 
             if (!this.connectedUsers.find((user) => user.username === data.username) && data.username !== this.username) {
                 this.connectedUsers.push(data);
+                this.sendToast('info', data.username + " est connecté");
             }
         },
 
         userDisconnected(data) {
             this.connectedUsers = this.connectedUsers.filter((user) => user.username !== data.username);
+            this.sendToast('info', data.username + " s'est déconnecté");
         },
 
         connectionNewChannel() {
             let channelName = document.getElementById("newChannelName").value;
 
             if (channelName.trim() !== "") {
+                let result = this.channels.find((element) => {return element.label === channelName});
+
+                if (result != null) {
+                    this.sendToast('danger', "Vous êtes dèjà connecter à ce channel");
+                    return
+                }
+
+                document.getElementById("newChannelName").value = "";
                 this.connectToChannel(channelName)
+            } else {
+                this.sendToast('danger', "Le nom du channel ne peut pas être vide !");
             }
         },
 
@@ -211,13 +241,14 @@ export default {
                 isPrivateChannel: isPrivateChannel,
             }
 
-            console.log(newChannel);
             this.channels.push(newChannel);
+            this.sendToast('success', "Connexion au nouveau channel : " + newChannel.label + " réussi !");
         },
 
         disconnectOfChannel(channel) {
             let index = this.channels.findIndex((element) => {return element.id === channel.id});
             this.channels.splice(index, 1);
+            this.sendToast('success', "Déconnexion du channel : " + channel.label + " réussi !");
         },
 
         setTopicInviteModal(channel) {
@@ -225,16 +256,21 @@ export default {
         },
 
         inviteUserToChannel() {
-            mqttService.publish("invitations/" + this.selectedInvitedUser, { invitedTo: this.selectedInvitedChannel.topic });
+            if (this.selectedInvitedUser != null && this.selectedInvitedChannel != null) {
+                mqttService.publish("invitations/" + this.selectedInvitedUser, { invitedTo: this.selectedInvitedChannel.label });
+
+                this.selectedInvitedUser = null;
+                this.selectedInvitedChannel = null;
+
+                this.sendToast('success', "Invitation envoyé !");
+            } else {
+                this.sendToast('danger', "Veuillez sélectionner un utilisateur !");
+            }
         },
 
         removeInvitation(invitation) {
             let index = this.invitations.findIndex((element) => {return element.id === invitation.id})
             this.invitations.splice(index, 1);
-        },
-
-        checkIfChannelExist(channelName) {
-            return this.channels.findIndex((element) => {return element.topic === channelName})!== -1;
         },
 
         disconnect() {
@@ -249,6 +285,23 @@ export default {
             sessionStorage.setItem('users', JSON.stringify(users));
 
             this.$router.push({ name: "UserLogin" });
+        },
+
+        checkIfChannelExist(channelName) {
+            return this.channels.findIndex((element) => {return element.topic === channelName})!== -1;
+        },
+
+        sendToast(type, message) {
+            const toast = {
+                type: type,
+                message: message,
+                autoHide: true,
+                delay: 2000
+            };
+
+            if (this.$refs.toasts) {
+                this.$refs.toasts.addToasts(toast);
+            }
         }
     }
 }

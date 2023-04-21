@@ -1,7 +1,7 @@
 <template>
     <div class="card shadow rounded">
         <div class="card-header">
-            Compte actuel
+            <font-awesome-icon :icon="['fas', 'user']" /> Compte actuel
         </div>
 
         <div class="card-body text-center">
@@ -12,8 +12,6 @@
 </template>
 
 <script>
-import mqttService from "@/services/mqttService";
-
 export default {
     name: 'UserInfo',
     props: ['username'],

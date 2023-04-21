@@ -11,5 +11,4 @@ export default {
 </script>
 
 <style>
-/* Vos styles globaux pour l'application */
 </style>

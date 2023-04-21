@@ -1,7 +1,7 @@
 <template>
     <div class="card shadow rounded">
         <div class="card-header">
-            Liste des invitations
+            <font-awesome-icon :icon="['fas', 'envelope']" /> Liste des invitations
         </div>
 
         <div class="card-body">

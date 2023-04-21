@@ -14,11 +14,15 @@
 
         <div class="row mt-3">
             <div class="col">
-                <h6>Channel {{ channel.isPrivateChannel ? "privé" : "publique" }} : {{ channel.label }}</h6>
+                <h6>
+                    <font-awesome-icon :icon="['fas', 'lock-open']" class="text-success d-inline"  v-if="!channel.isPrivateChannel"/>
+                    <font-awesome-icon :icon="['fas', 'lock']" class="text-danger d-inline" v-else />
+                    Channel {{ channel.isPrivateChannel ? "privé" : "publique" }} : {{ channel.label }}
+                </h6>
             </div>
 
             <div class="col text-end">
-                <button v-if="channel.allowInvitations && !channel.isPrivateChannel" type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#inviteChannelModal" @click="setTopicInviteModal">Inviter</button>
+                <button v-if="channel.allowInvitations && !channel.isPrivateChannel" type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#inviteChannelModal" @click="setTopicInviteModal"><font-awesome-icon :icon="['fas', 'user-plus']" /> Inviter</button>
                 <button v-if="channel.allowDisconnection" type="button" class="btn btn-sm btn-danger ms-2" @click="disconnectOfChannel">Quitter le channel</button>
             </div>
         </div>
@@ -33,7 +37,7 @@ import mqttService from "@/services/mqttService";
 export default {
     name: "ChannelSystem",
     components: { MessageInput, ChatDisplay },
-    props: ['index', 'channel'],
+    props: ['index', 'channel', 'userName'],
     data() {
         return {
             topic: this.channel.topic,
@@ -41,8 +45,10 @@ export default {
     },
     mounted() {
         mqttService.subscribe(this.topic);
+        mqttService.publish(this.topic, {isJoinMessage: true, message: this.userName + " s'est connecté dans le channel"});
     },
     beforeUnmount() {
+        mqttService.publish(this.topic, {isLeaveMessage: true, message: this.userName + " s'est déconnecté du channel"});
         mqttService.unsubscribe(this.topic);
     },
     methods: {

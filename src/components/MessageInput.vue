@@ -1,11 +1,11 @@
 <template>
     <div class="row g-3 align-items-center">
-        <div class="col-10">
-            <input type="text" v-model="message" class="form-control" aria-describedby="message" placeholder="Message">
+        <div class="col-11">
+            <input type="text" @keyup.enter="sendMessage" v-model="message" class="form-control" aria-describedby="message" placeholder="Message envoyé dans le chat">
         </div>
 
-        <div class="col-2 text-center">
-            <button @click="sendMessage" class="btn btn-sm btn-primary w-100">Envoyer</button>
+        <div class="col-1 text-center">
+            <button @click="sendMessage" class="btn btn-sm btn-primary w-100"><font-awesome-icon :icon="['fas', 'paper-plane']" /></button>
         </div>
 
     </div>
