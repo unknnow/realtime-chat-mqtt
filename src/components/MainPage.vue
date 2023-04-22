@@ -1,10 +1,13 @@
 <template>
+    <!-- Affiche les toasts pour les notifications -->
     <ToastSystem ref="toasts"/>
 
     <div class="container pt-4">
         <h2 class="text-center mb-4">Efficom - RealTime Chat - Mqtt</h2>
 
+        <!-- Si la connexion avec le serveur MQTT est établie, affiche les éléments de la page -->
         <div class="row" v-if="mqttConnected">
+            <!-- Liste des chats et messages -->
             <div class="col">
                 <div class="card shadow rounded max-vh-80 h-100" id="cardChats">
                     <div class="card-header">
@@ -13,26 +16,33 @@
 
                     <div class="card-body">
                         <div class="d-flex align-items-start">
-                            <ChannelTabs :channels="channels" :user-name="this.username" ref="ChannelTabs" />
+                            <!-- Affiche les onglets de chat et leurs messages -->
+                            <ChannelTabs ref="ChannelTabs" :channels="channels" :user-name="this.username" @setTopicInviteModal="setTopicInviteModal" @disconnectOfChannel="disconnectOfChannel" />
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Infos utilisateur, liste des utilisateurs connectés et système d'invitation -->
             <div class="col-3">
-                <UserInfo :username="username" />
+                <!-- Affiche les informations de l'utilisateur -->
+                <UserInfo :username="username" @disconnect="disconnect" />
 
-                <ConnectedUsers :connected-users="connectedUsers" :current-user-name="username" class="mt-4" />
+                <!-- Affiche la liste des utilisateurs connectés -->
+                <ConnectedUsers :connected-users="connectedUsers" :current-user-name="username" @connectToChannel="connectToChannel" @sendToast="sendToast" class="mt-4" />
 
-                <InvitationsSystem :invitations="invitations" class="mt-4" />
+                <!-- Gère les invitations pour rejoindre un chat -->
+                <InvitationsSystem :invitations="invitations" @connectToChannel="connectToChannel" @removeInvitation="removeInvitation" class="mt-4" />
             </div>
         </div>
 
+        <!-- Si la connexion avec le serveur MQTT n'est pas encore établie, affiche un message -->
         <div class="row" v-else>
             <p class="text-center">Connexion avec HiveMQ en cours ...</p>
         </div>
     </div>
 
+    <!-- Modals pour la création de nouveaux channels et les invitations -->
     <!-- Modal New Channel -->
     <div class="modal fade" data-bs-backdrop="static" id="newChannelModal" tabindex="-1" aria-labelledby="newChannelModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -59,7 +69,7 @@
         </div>
     </div>
 
-    <!-- Modal Inviation Channel -->
+    <!-- Modal Invitation Channel -->
     <div class="modal fade" data-bs-backdrop="static" id="inviteChannelModal" tabindex="-1" aria-labelledby="inviteChannelModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -87,12 +97,15 @@
 </template>
 
 <script>
+// Importation des composants Vue nécessaires
 import ChannelTabs from './ChannelTabs.vue';
 import UserInfo from './UserInfo.vue';
 import ConnectedUsers from './ConnectedUsers.vue';
 import InvitationsSystem from "./InvitationsSystem.vue";
-import mqttService from "@/services/mqttService";
 import ToastSystem from "@/components/ToastSystem.vue";
+
+// Importation du service MQTT
+import mqttService from "@/services/mqttService";
 
 export default {
     name: 'MainPage',
@@ -106,8 +119,11 @@ export default {
     props: ['username'],
     data() {
         return {
+            // Variable pour vérifier si la connexion MQTT est établie
             mqttConnected: false,
+            // Liste des utilisateurs connectés
             connectedUsers: [],
+            // Liste des channels disponibles
             channels: [
                 {
                     id: new Date().getTime(),
@@ -119,14 +135,18 @@ export default {
                     isPrivateChannel: false,
                 }
             ],
+            // Variables pour gérer les invitations dans le modal
             selectedInvitedChannel: null,
             selectedInvitedUser: null,
+            // Liste des invitations reçues
             invitations: [],
         };
     },
+    // Fonction exécutée après le montage du composant
     mounted() {
         const clientId = "clientId-" + new Date().getTime();
 
+        // Fonction appelée lors de la perte de connexion MQTT
         const onConnectionLost = (responseObject) => {
             if (responseObject.errorCode !== 0) {
                 console.log("onConnectionLost:" + responseObject.errorMessage);
@@ -135,6 +155,7 @@ export default {
             }
         };
 
+        // Fonction appelée lorsqu'un message MQTT arrive
         const onMessageArrived = (message) => {
             const data = JSON.parse(message.payloadString);
 
@@ -181,6 +202,7 @@ export default {
             }
         };
 
+        // Connexion au service MQTT
         mqttService.connect(
             clientId,
             this.username,
@@ -191,6 +213,7 @@ export default {
         );
     },
     methods: {
+        // Fonction pour gérer les connexions d'utilisateurs
         userConnected(data) {
             if (!this.mqttConnected) {
                 this.mqttConnected = true;
@@ -207,11 +230,13 @@ export default {
             }
         },
 
+        // Fonction pour gérer les déconnexions d'utilisateurs
         userDisconnected(data) {
             this.connectedUsers = this.connectedUsers.filter((user) => user.username !== data.username);
             this.sendToast('info', data.username + " s'est déconnecté");
         },
 
+        // Fonctions pour la connexion à un nouveau channel
         connectionNewChannel() {
             let channelName = document.getElementById("newChannelName").value;
 
@@ -245,16 +270,19 @@ export default {
             this.sendToast('success', "Connexion au nouveau channel : " + newChannel.label + " réussi !");
         },
 
+        // Fonction pour la déconnexion à un channel
         disconnectOfChannel(channel) {
             let index = this.channels.findIndex((element) => {return element.id === channel.id});
             this.channels.splice(index, 1);
             this.sendToast('success', "Déconnexion du channel : " + channel.label + " réussi !");
         },
 
+        // Fonction pour SET le topic dans le modal d'invitation
         setTopicInviteModal(channel) {
             this.selectedInvitedChannel = channel;
         },
 
+        // Fonction pour invite un utilisateur à rejoindre un nouveau channel
         inviteUserToChannel() {
             if (this.selectedInvitedUser != null && this.selectedInvitedChannel != null) {
                 mqttService.publish("invitations/" + this.selectedInvitedUser, { invitedTo: this.selectedInvitedChannel.label });
@@ -268,11 +296,13 @@ export default {
             }
         },
 
+        // Fonction pour supprimer/refuser une invitation
         removeInvitation(invitation) {
             let index = this.invitations.findIndex((element) => {return element.id === invitation.id})
             this.invitations.splice(index, 1);
         },
 
+        // Fonction pour se déconnecter
         disconnect() {
             // MQTT
             mqttService.publish("users/disconnected", {username: this.username,});
@@ -287,10 +317,12 @@ export default {
             this.$router.push({ name: "UserLogin" });
         },
 
+        // Fonction qui vérifie si un channel du même nom existe dèjà
         checkIfChannelExist(channelName) {
             return this.channels.findIndex((element) => {return element.topic === channelName})!== -1;
         },
 
+        // Fonction pour envoyer un toast/notification
         sendToast(type, message) {
             const toast = {
                 type: type,
